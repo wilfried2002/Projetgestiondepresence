@@ -1,0 +1,10 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h2>{{ title }}</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="button default" type="submit">Importer</button>
+</form>
+<a href="../">Retour à la liste des employés</a>
+{% endblock %}

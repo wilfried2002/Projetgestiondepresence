@@ -1,0 +1,332 @@
+{% extends 'base_client.html' %}
+{% load presence_extras %}
+{% load static %}
+
+{% block title %}Pointage des employés{% endblock %}
+
+{% block content %}
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert 
+      {% if message.tags == 'success' %}alert-success
+      {% elif message.tags == 'error' %}alert-danger
+      {% elif message.tags == 'info' %}alert-info
+      {% else %}alert-secondary{% endif %}"
+      id="flash-messages">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+<h2 class="mb-4 text-center">Tableau de pointage des employés</h2>
+
+<!-- Barre de recherche -->
+<div class="input-group mb-4">
+  <span class="input-group-text">🔍</span>
+  <input type="text" id="searchInput" class="form-control" placeholder="Rechercher un employé (nom, prénom, poste)...">
+</div>
+
+<!-- Liste des employés -->
+<div class="row g-2" id="employeCards">
+  {% for item in employe_data %}
+    {% with employe=item.employe presence=item.presence etat=item.etat_actuel %}
+    <div class="col-6 col-sm-4 col-md-3 col-lg-2 employe-card">
+      <div class="card shadow position-relative h-100" style="min-width:180px; max-width:200px;">
+        {% if employe.photo %}
+          <img src="{{ employe.photo.url }}" class="card-img-top rounded-circle mx-auto d-block mt-3"
+               style="height:90px;width:90px;object-fit:cover;border:3px solid #ffc107;"
+               alt="{{ employe.nom }} {{ employe.prenom }}" />
+        {% else %}
+          <img src="{% static 'default_avatar.PNG' %}" class="card-img-top rounded-circle mx-auto d-block mt-3"
+               style="height:90px;width:90px;object-fit:cover;border:3px solid #eee;"
+               alt="Photo par défaut" />
+        {% endif %}
+
+        {% if presence %}
+          {% if presence.heure_sortie %}
+            <span class="badge-status badge-sortant animate">Est sorti</span>
+          {% elif presence.heure_entree %}
+            <span class="badge-status badge-entrant animate">Est entré</span>
+          {% endif %}
+        {% endif %}
+
+        <div class="card-body p-2">
+          <h6 class="card-title mb-1">{{ employe.prenom }} {{ employe.nom }}</h6>
+          <p class="card-text mb-1" style="font-size:0.9em;"><strong>Poste:</strong> {{ employe.poste }}</p>
+          <p class="card-text mb-2" style="font-size:0.9em;"><strong>Type:</strong> {{ employe.get_type_display }}</p>
+          <p class="card-text mb-2" style="font-size:0.9em;"><strong>État actuel:</strong> <span class="fw-bold">{{ etat }}</span></p>
+          <div class="d-flex justify-content-between gap-1">
+            <form action="{% url 'marquer_entree' employe.id %}" method="post">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-success btn-sm">Entrée</button>
+            </form>
+            <form action="{% url 'marquer_sortie' employe.id %}" method="post">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-danger btn-sm">Sortie</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endwith %}
+  {% endfor %}
+</div>
+
+<style>
+.employe-card .card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+.employe-card .card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.employe-card .badge-status {
+    position: absolute;
+    top: 12px;
+    right: -32px;
+    transform: rotate(25deg);
+    min-width: 90px;
+    text-align: center;
+    font-size: 0.85em;
+    padding: 6px 0;
+    color: #fff;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    pointer-events: none;
+}
+.badge-entrant {
+    background: #28a745;
+}
+.badge-sortant {
+    background: #dc3545;
+}
+.badge-status.animate {
+    animation: popBadge 0.5s;
+}
+@keyframes popBadge {
+    0%   { transform: scale(0.5) rotate(25deg); opacity: 0.5; }
+    60%  { transform: scale(1.2) rotate(25deg); opacity: 1; }
+    100% { transform: scale(1) rotate(25deg); opacity: 1; }
+}
+</style>
+
+<!-- Modal -->
+<div class="modal fade" id="employeModal" tabindex="-1" aria-labelledby="employeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg border-0">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="employeModalLabel">
+          <i class="bi bi-person-badge-fill me-2"></i> Informations de l'employé
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body" id="modalBodyEtat" style="transition: background-color 0.3s ease;">
+        <div class="text-center mb-3 position-relative">
+          <img id="modalPhoto" src="" class="rounded-circle shadow" style="height:100px;width:100px;object-fit:cover;border:4px solid #ffc107;" alt="Photo" />
+          <!-- Supprime ou laisse vide ce span -->
+          <span id="etatBadge"></span>
+        </div>
+        <p><strong>👤 Nom:</strong> <span id="modalNom"></span></p>
+        <p><strong>📝 Prénom:</strong> <span id="modalPrenom"></span></p>
+        <p><strong>💼 Poste:</strong> <span id="modalPoste"></span></p>
+        <p><strong>🏷️ Type:</strong> <span id="modalType"></span></p>
+        <p><strong>🔄 État actuel:</strong> <span class="fw-bold">{{ etat }}</span></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Masquer le message après 5 secondes
+    const flashMessages = document.getElementById('flash-messages');
+    if (flashMessages) {
+        setTimeout(() => {
+            flashMessages.style.transition = "opacity 0.5s ease";
+            flashMessages.style.opacity = 0;
+            setTimeout(() => {
+                flashMessages.style.display = 'none';
+            }, 300); // Délai pour cacher l'élément complètement
+        }, 3000);
+    }
+
+    // Filtrage dynamique des cartes
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        const query = this.value.toLowerCase();
+        const cards = document.querySelectorAll('.employe-card');
+        cards.forEach(card => {
+            const text = card.innerText.toLowerCase();
+            card.style.display = text.includes(query) ? 'block' : 'none';
+        });
+    });
+});
+
+function afficherEmployeModal(data) {
+  document.getElementById('modalNom').textContent = data.nom;
+  document.getElementById('modalPrenom').textContent = data.prenom;
+  document.getElementById('modalPoste').textContent = data.poste;
+  document.getElementById('modalType').textContent = data.type;
+  document.getElementById('modalPhoto').src = data.photo_url;
+  document.getElementById('modalEtat').textContent = data.etat;
+
+  const modalBody = document.getElementById('modalBodyEtat');
+  const badge = document.getElementById('etatBadge');
+
+  // Mise à jour de l’état et des couleurs selon "présent" ou "absent"
+  if (data.etat.toLowerCase() === 'présent') {
+    modalBody.style.backgroundColor = '#d4edda';
+    modalBody.style.color = '#155724';
+    badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success fs-6 shadow';
+    badge.innerHTML = '<i class="bi bi-check-circle me-1"></i> Présent';
+  } else {
+    modalBody.style.backgroundColor = '#f8d7da';
+    modalBody.style.color = '#721c24';
+    badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger fs-6 shadow';
+    badge.innerHTML = '<i class="bi bi-x-circle me-1"></i> Absent';
+  }
+
+  const modal = new bootstrap.Modal(document.getElementById('employeModal'));
+  modal.show();
+}
+</script>
+
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        for (const cookie of document.cookie.split(';')) {
+            const c = cookie.trim();
+            if (c.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(c.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+function showFlashMessage(message, color) {
+    const flash = document.getElementById('flash-message');
+    flash.textContent = message;
+    flash.style.display = 'block';
+    flash.style.background = color;
+    flash.style.color = '#fff';
+    flash.style.padding = '8px';
+    flash.style.borderRadius = '6px';
+    flash.style.marginBottom = '12px';
+    flash.style.textAlign = 'center';
+    flash.style.fontWeight = 'bold';
+    flash.style.transition = 'opacity 0.5s';
+    flash.style.opacity = 1;
+    setTimeout(() => {
+        flash.style.opacity = 0;
+        setTimeout(() => { flash.style.display = 'none'; }, 500);
+    }, 5000);
+}
+
+// Marquer Entrée
+function marquerEntree(employeId, btn) {
+    fetch(`/presence/entree/${employeId}/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/json'},
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.statut === 'ok') {
+            const card = btn.closest('.card');
+            card.querySelector('.badge-status')?.remove();
+            const badge = document.createElement('span');
+            badge.className = 'badge-status badge-entrant animate';
+            badge.innerText = 'Est entré';
+            // Ajoute le badge juste après la photo
+            const photo = card.querySelector('.card-img-top');
+            photo.insertAdjacentElement('afterend', badge);
+
+            card.dataset.heureEntree = data.heure_entree || '';
+            card.dataset.heureSortie = '';
+            card.dataset.etat = 'Présent';
+
+            showFlashMessage('Employé entré avec succès !', '#007bff'); // bleu
+        }
+    });
+}
+
+function marquerSortie(employeId, btn) {
+    fetch(`/presence/sortie/${employeId}/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/json'},
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.statut === 'ok') {
+            const card = btn.closest('.card');
+            card.querySelector('.badge-status')?.remove();
+            const badge = document.createElement('span');
+            badge.className = 'badge-status badge-sortant animate';
+            badge.innerText = 'Est sorti';
+            // Ajoute le badge juste après la photo
+            const photo = card.querySelector('.card-img-top');
+            photo.insertAdjacentElement('afterend', badge);
+
+            card.dataset.heureSortie = data.heure_sortie || '';
+            card.dataset.etat = 'Absent';
+
+            showFlashMessage('Employé sorti avec succès !', '#dc3545'); // rouge
+        }
+    });
+}
+
+
+// Filtrage dynamique des cartes
+document.getElementById('searchInput').addEventListener('keyup', function () {
+    const query = this.value.toLowerCase();
+    const cards = document.querySelectorAll('.employe-card');
+    cards.forEach(card => {
+        const text = card.innerText.toLowerCase();
+        card.style.display = text.includes(query) ? 'block' : 'none';
+    });
+});
+
+// Ouvre le modal avec les infos de l'employé
+document.querySelectorAll('.employe-card .card').forEach(card => {
+    card.addEventListener('click', function(e) {
+        if (e.target.tagName === 'BUTTON') return;
+
+        const photo = card.querySelector('.card-img-top').src;
+        const nomPrenom = card.querySelector('.card-title').innerText.split(' ');
+        const prenom = nomPrenom[0];
+        const nom = nomPrenom.slice(1).join(' ');
+        const poste = card.querySelector('.card-text:nth-child(2)').innerText.replace('Poste: ', '');
+        const type = card.querySelector('.card-text:nth-child(3)').innerText.replace('Type: ', '');
+        const badge = card.querySelector('.badge-status');
+        let etat = card.dataset.etat || (badge ? (badge.classList.contains('badge-entrant') ? 'Présent' : 'Absent') : 'Absent');
+        let heureEntree = card.dataset.heureEntree || '';
+        let heureSortie = card.dataset.heureSortie || '';
+
+        document.getElementById('modalPhoto').src = photo;
+        document.getElementById('modalNom').innerText = nom;
+        document.getElementById('modalPrenom').innerText = prenom;
+        document.getElementById('modalPoste').innerText = poste;
+        document.getElementById('modalType').innerText = type;
+
+        // Etat actuel
+        document.getElementById('modalEtat').innerText = etat;
+
+        // Ajoute l'heure d'entrée et de sortie
+        let heureEntreeHtml = heureEntree ? `<br><span style="font-size:0.9em;">Heure entrée : ${heureEntree}</span>` : '';
+        let heureSortieHtml = heureSortie ? `<br><span style="font-size:0.9em;">Heure sortie : ${heureSortie}</span>` : '';
+        document.getElementById('modalEtat').innerHTML = etat + heureEntreeHtml + heureSortieHtml;
+
+        const modal = new bootstrap.Modal(document.getElementById('employeModal'));
+        modal.show();
+    });
+});
+</script>
+{% endblock %}

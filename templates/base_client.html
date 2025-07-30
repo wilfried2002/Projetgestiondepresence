@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Dashboard Agent de pointage{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #f4f6f9;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 1rem 2rem;
+    }
+    header h1 {
+      margin: 0;
+      font-weight: 600;
+    }
+    footer {
+      background-color: #e9ecef;
+      padding: 1rem 2rem;
+      text-align: center;
+      margin-top: auto;
+      font-size: 0.9rem;
+      color: #6c757d;
+    }
+    nav {
+      background-color: white;
+      padding: 0.5rem 2rem;
+      box-shadow: 0 1px 4px rgb(0 0 0 / 0.1);
+      margin-bottom: 1.5rem;
+    }
+    .badge-status {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      padding: 0.35em 0.6em;
+      font-weight: 700;
+      font-size: 0.8rem;
+      border-radius: 0.25rem;
+      color: white;
+      transform: rotate(15deg);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.15);
+    }
+    .badge-entrant {
+      background-color: #198754; /* vert bootstrap */
+    }
+    .badge-sortant {
+      background-color: #dc3545; /* rouge bootstrap */
+    }
+    .animate {
+  animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<header>
+  <h1>Gestion de présence - Agent de pointage</h1>
+</header>
+
+<nav>
+  <!-- Ici tu peux ajouter un menu, liens, logo, utilisateur connecté, etc. -->
+  <span>Bienvenue, Agent</span>
+</nav>
+
+<main class="container flex-grow-1">
+  {% block content %}{% endblock %}
+</main>
+
+<footer>
+  &copy; 2025 - Mimosa S.A.R.L | Gestion de présence | Propulsé par Wilfried Ngankou
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</html>
