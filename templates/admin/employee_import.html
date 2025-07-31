@@ -3,6 +3,9 @@
     <div class="object-tools">
         <ul>
             <li><a href="import-employes/" class="addlink">Importer depuis Excel</a></li>
+            <a href="{% url 'fiche_presence_globale' %}">Imprimer tous</a>
+            <a href="{% url 'fiche_presence_globale' %}?type=temporaire">Imprimer temporaires</a>
+            <a href="{% url 'fiche_presence_globale' %}?type=permanent">Imprimer permanents</a>
         </ul>
     </div>
 {% endblock %}

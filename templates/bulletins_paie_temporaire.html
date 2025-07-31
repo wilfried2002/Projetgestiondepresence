@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bulletins de paie - Temporaires</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+        .bulletins {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            margin: 0 auto;
+            max-width: 500px;
+        }
+        .bulletin {
+            width: 420px;
+            background: #fff;
+            border: 1px solid #bbb;
+            border-radius: 8px 8px 8px 8px;
+            box-shadow: 0 2px 8px #0001;
+            padding: 24px 32px;
+            margin-bottom: 0;
+            position: relative;
+            page-break-inside: avoid;
+            box-sizing: border-box;
+        }
+        .bulletin:not(:last-child)::after {
+            content: "";
+            display: block;
+            width: 100%;
+            height: 0;
+            border-bottom: 2px dashed #bbb;
+            margin: 24px 0 0 0;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 18px;
+            font-size: 22px;
+            letter-spacing: 1px;
+        }
+        .ligne {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        .label {
+            font-weight: bold;
+            color: #374151;
+        }
+        .valeur {
+            color: #111827;
+        }
+        .date-impression {
+            text-align: right;
+            margin-top: 24px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+        @media print {
+            html, body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            .bulletins {
+                width: 100vw;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+            }
+            .bulletin {
+                width: 100vw;
+                max-width: none;
+                height: 33vh;
+                min-height: 0;
+                box-shadow: none;
+                border-radius: 0;
+                margin-bottom: 0;
+                page-break-inside: avoid;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            .bulletin:not(:last-child)::after {
+                margin: 0;
+            }
+            /* Coupure de page après chaque groupe de 3 bulletins */
+            .bulletin:nth-of-type(3n) {
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bulletins">
+        {% for b in bulletins %}
+        <div class="bulletin">
+            <h2>Bulletin de paie - Temporaire</h2>
+            <div class="ligne"><span class="label">Nom :</span> <span class="valeur">{{ b.employee.nom }}</span></div>
+            <div class="ligne"><span class="label">Prénom :</span> <span class="valeur">{{ b.employee.prenom }}</span></div>
+            <div class="ligne"><span class="label">Nombre de jours pointés :</span> <span class="valeur">{{ b.nb_jours }}</span></div>
+            <div class="ligne"><span class="label">Montant mensuel :</span> <span class="valeur">{{ b.montant_mensuel }} FCFA</span></div>
+            <div class="date-impression">Date d'impression : {{ today|date:'d/m/Y' }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    <script>window.print();</script>
+</body>
+</html>

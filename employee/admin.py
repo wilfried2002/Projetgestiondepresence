@@ -50,7 +50,10 @@ class EmployeeAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path('import-employes/', self.import_employees)
+            path('import-employes/', self.import_employees),
+            path('fiche-presence-globale/', 
+                 self.admin_site.admin_view(lambda request: redirect('/presence/fiche-presence-globale/')),
+                 name='fiche_presence_globale'),
         ]
         return custom_urls + urls
 

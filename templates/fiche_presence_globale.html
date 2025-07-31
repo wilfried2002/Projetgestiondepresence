@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fiche de présence globale</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 8px; }
+        th { background: #eee; }
+        .filter-btns {
+            margin-bottom: 20px;
+        }
+        .filter-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            margin-right: 8px;
+            border: none;
+            border-radius: 5px;
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .filter-btn.tous {
+            background: #e0e7ff;
+            color: #1e40af;
+        }
+        .filter-btn.temporaire {
+            background: #fef9c3;
+            color: #b45309;
+        }
+        .filter-btn.permanent {
+            background: #d1fae5;
+            color: #047857;
+        }
+        .filter-btn:hover {
+            filter: brightness(0.95);
+            box-shadow: 0 2px 8px #0001;
+        }
+        body {
+            position: relative;
+            min-height: 100vh;
+        }
+        .mimosa-watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 60px;
+            color: #e5e7eb;
+            opacity: 0.18;
+            z-index: 0;
+            pointer-events: none;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+        @media print {
+            button, .filter-btns { display: none; }
+            .mimosa-watermark {
+                opacity: 0.12;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="mimosa-watermark">PRESENCE PERSONNEL MIMOSA</div>
+    <div class="main-content">
+        <h1>
+            {% if type_filter == 'temporaire' %}
+                Fiche de présence des employés temporaires
+            {% elif type_filter == 'permanent' %}
+                Fiche de présence des employés permanents
+            {% else %}
+                Fiche de présence de tous les employés
+            {% endif %}
+        </h1>
+        <div class="filter-btns">
+            <a href="?" class="filter-btn tous" title="Tous les employés">
+                <span>👥</span> Tous
+            </a>
+            <a href="?type=temporaire" class="filter-btn temporaire" title="Employés temporaires">
+                <span>⏳</span> Temporaire
+            </a>
+            <a href="?type=permanent" class="filter-btn permanent" title="Employés permanents">
+                <span>💼</span> Permanent
+            </a>
+        </div>
+        {% if type_filter == 'temporaire' %}
+        <form method="get" action="{% url 'imprimer_bulletins_temporaire' %}" target="_blank" style="display:inline-block; margin-bottom:16px;">
+            <button type="submit" style="padding:8px 18px; border-radius:5px; background:#fde68a; color:#b45309; border:1px solid #fbbf24; font-size:15px; font-weight:600; cursor:pointer; margin-bottom:10px;">
+                🖨️ Imprimer tous les bulletins
+            </button>
+        </form>
+        {% endif %}
+        <button onclick="window.print()">Imprimer</button>
+        <table>
+            <tr>
+                <th>Matricule</th>
+                <th>Nom</th>
+                <th>Prénom</th>
+                <th>Jours de présence</th>
+                <th>Salaire mensuel</th>
+                {% if type_filter == 'permanent' %}
+                    <th>Jours pointés</th>
+                {% endif %}
+                {% if type_filter == 'temporaire' %}
+                    <th>Bulletin de paie</th>
+                {% endif %}
+            </tr>
+            {% for row in data %}
+            <tr>
+                <td>{{ row.employee.matricule }}</td>
+                <td>{{ row.employee.nom }}</td>
+                <td>{{ row.employee.prenom }}</td>
+                <td>{{ row.nb_jours }}</td>
+                <td>{{ row.salaire_mensuel }}</td>
+                {% if type_filter == 'permanent' %}
+                    <td>
+                        {% for jour in row.jours_presence %}
+                            <span style="display:inline-block; margin:2px 4px; padding:2px 6px; background:#f3f4f6; border-radius:4px; font-size:13px;">{{ jour }}</span>
+                        {% empty %}
+                            <em>Aucun</em>
+                        {% endfor %}
+                    </td>
+                {% endif %}
+                {% if type_filter == 'temporaire' %}
+                    <td>
+                        <form method="get" action="{% url 'bulletin_paie_temporaire' row.employee.id %}" target="_blank" style="margin:0;">
+                            <button type="submit" style="padding:4px 10px; border-radius:4px; background:#fef9c3; color:#b45309; border:1px solid #facc15; font-size:13px; cursor:pointer;">🧾 Bulletin</button>
+                        </form>
+                    </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

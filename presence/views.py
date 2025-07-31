@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.shortcuts import redirect, render
 
 # Create your views here.
@@ -41,7 +42,7 @@ def marquer_entree(request, employe_id):
     employee = get_object_or_404(Employee, id=employe_id)
     presence, created = Presence.objects.get_or_create(employee=employee, date=now().date())
     if not presence.heure_entree:
-        presence.heure_entree = now().time()
+        presence.heure_entree = timezone.now().time() # <-- ICI pour l'heure d'entrée
         presence.save()
         messages.success(request, f"{employee.prenom} {employee.nom} est maintenant entré.")  # bleu/vert
     else:
@@ -54,9 +55,81 @@ def marquer_sortie(request, employe_id):
     employee = get_object_or_404(Employee, id=employe_id)
     presence, created = Presence.objects.get_or_create(employee=employee, date=now().date())
     if not presence.heure_sortie:
-        presence.heure_sortie = now().time()
+        presence.heure_sortie = timezone.now().time()  # <-- ICI pour l'heure de sortie
         presence.save()
         messages.error(request, f"{employee.prenom} {employee.nom} est maintenant sorti.")  # rouge
     else:
         messages.info(request, f"{employee.prenom} {employee.nom} était déjà sorti aujourd'hui.")
     return redirect('tableau_presence')
+
+
+from django.shortcuts import render
+from employee.models import Employee
+from presence.models import Presence  # à adapter selon ton modèle
+
+def fiche_presence_globale(request):
+    import datetime
+    import locale
+    locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')  # Pour les noms de jours en français, si supporté
+    type_filter = request.GET.get('type')  # 'temporaire', 'permanent', ou None
+    employees = Employee.objects.all()
+    if type_filter in ['temporaire', 'permanent']:
+        employees = employees.filter(type=type_filter)
+    data = []
+    for emp in employees:
+        presences = Presence.objects.filter(employee=emp).order_by('date')
+        nb_jours = presences.count()
+        salaire_mensuel = emp.salaire_mensuel() if hasattr(emp, 'salaire_mensuel') else "-"
+        jours_presence = []
+        if emp.type == 'permanent' or type_filter == 'permanent':
+            for p in presences:
+                # Nom du jour en français, ex: lundi, mardi, etc.
+                jour = p.date.strftime('%A')
+                jours_presence.append(jour.capitalize())
+        data.append({
+            'employee': emp,
+            'nb_jours': nb_jours,
+            'salaire_mensuel': salaire_mensuel,
+            'jours_presence': jours_presence,
+        })
+    return render(request, 'fiche_presence_globale.html', {
+        'data': data,
+        'type_filter': type_filter,
+        'today': datetime.date.today(),
+    })
+
+
+def bulletin_paie_temporaire(request, employee_id):
+    import datetime
+    from django.shortcuts import get_object_or_404
+    employee = get_object_or_404(Employee, id=employee_id, type='temporaire')
+    presences = Presence.objects.filter(employee=employee, heure_entree__isnull=False, heure_sortie__isnull=False)
+    nb_jours = presences.count()
+    montant_mensuel = employee.salaire_mensuel() if hasattr(employee, 'salaire_mensuel') else "-"
+    today = datetime.date.today()
+    return render(request, 'bulletin_paie_temporaire.html', {
+        'employee': employee,
+        'nb_jours': nb_jours,
+        'montant_mensuel': montant_mensuel,
+        'today': today,
+    })
+
+
+def imprimer_bulletins_temporaire(request):
+    import datetime
+    temporaires = Employee.objects.filter(type='temporaire')
+    bulletins = []
+    for emp in temporaires:
+        presences = Presence.objects.filter(employee=emp, heure_entree__isnull=False, heure_sortie__isnull=False)
+        nb_jours = presences.count()
+        montant_mensuel = emp.salaire_mensuel() if hasattr(emp, 'salaire_mensuel') else "-"
+        bulletins.append({
+            'employee': emp,
+            'nb_jours': nb_jours,
+            'montant_mensuel': montant_mensuel,
+        })
+    today = datetime.date.today()
+    return render(request, 'bulletins_paie_temporaire.html', {
+        'bulletins': bulletins,
+        'today': today,
+    })
