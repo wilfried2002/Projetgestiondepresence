@@ -53,11 +53,19 @@
 <body>
     <div class="bulletin">
         <h2>Bulletin de paie - Temporaire</h2>
+        <div style="text-align: center; margin-bottom: 15px; color: #6b7280; font-size: 13px;">
+            {% if user.is_authenticated %}
+                Généré par : {{ user.get_full_name|default:user.username }}
+            {% endif %}
+        </div>
         <div class="ligne"><span class="label">Nom :</span> <span class="valeur">{{ employee.nom }}</span></div>
         <div class="ligne"><span class="label">Prénom :</span> <span class="valeur">{{ employee.prenom }}</span></div>
         <div class="ligne"><span class="label">Nombre de jours pointés :</span> <span class="valeur">{{ nb_jours }}</span></div>
         <div class="ligne"><span class="label">Montant mensuel :</span> <span class="valeur">{{ montant_mensuel }} FCFA</span></div>
         <div class="date-impression">Date d'impression : {{ today|date:'d/m/Y' }}</div>
+    </div>
+    <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+        © 2025 - Mimosa S.A.R.L
     </div>
     <script>window.print();</script>
 </body>

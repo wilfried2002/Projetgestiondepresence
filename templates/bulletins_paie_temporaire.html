@@ -99,6 +99,11 @@
 </head>
 <body>
     <div class="bulletins">
+        <div style="text-align: center; margin-bottom: 20px; color: #6b7280; font-style: italic; width: 100%;">
+            {% if user.is_authenticated %}
+                Généré par : {{ user.get_full_name|default:user.username }}
+            {% endif %}
+        </div>
         {% for b in bulletins %}
         <div class="bulletin">
             <h2>Bulletin de paie - Temporaire</h2>
@@ -109,6 +114,9 @@
             <div class="date-impression">Date d'impression : {{ today|date:'d/m/Y' }}</div>
         </div>
         {% endfor %}
+    </div>
+    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; width: 100%;">
+        © 2025 - Mimosa S.A.R.L
     </div>
     <script>window.print();</script>
 </body>

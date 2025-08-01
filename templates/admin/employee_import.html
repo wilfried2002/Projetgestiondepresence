@@ -1,11 +1,33 @@
 {% extends "admin/change_list.html" %}
 {% block object-tools %}
     <div class="object-tools">
-        <ul>
-            <li><a href="import-employes/" class="addlink">Importer depuis Excel</a></li>
-            <a href="{% url 'fiche_presence_globale' %}">Imprimer tous</a>
-            <a href="{% url 'fiche_presence_globale' %}?type=temporaire">Imprimer temporaires</a>
-            <a href="{% url 'fiche_presence_globale' %}?type=permanent">Imprimer permanents</a>
+        <ul style="list-style: none; padding: 0; display: flex; gap: 10px; flex-wrap: wrap;">
+            <li>
+                <a href="import-employes/" class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel"></i> Importer depuis Excel
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'fiche_presence_globale' %}" class="btn btn-primary">
+                    <i class="bi bi-printer"></i> Liste présence - Tous
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'fiche_presence_globale' %}?type=temporaire" class="btn btn-warning">
+                    <i class="bi bi-printer-fill"></i> Liste présence - Temporaires
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'fiche_presence_globale' %}?type=permanent" class="btn btn-info text-white">
+                    <i class="bi bi-printer-fill"></i> Liste présence - Permanents
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'analyse_presence_globale' %}" class="btn btn-secondary">
+                    <i class="bi bi-graph-up"></i> Analyse présence globale
+                </a>
+            </li>
         </ul>
+        
     </div>
 {% endblock %}

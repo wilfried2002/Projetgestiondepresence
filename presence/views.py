@@ -19,13 +19,20 @@ def tableau_presence(request):
     employe_data = []
     for employe in employee:
         presence = presences.filter(employee=employe).first()
-        if presence:
-            if presence.heure_entree and presence.heure_sortie:
-                etat = "Présent"
-            else:
-                etat = "Absent"
+        # Par défaut absent
+        etat = "(Absent)"
+        # Si l'employé est présent
+        if presence and presence.heure_entree and presence.heure_sortie:
+            etat = "(Etait Présent Aujourd'hui)"
+        # Si l'employé est entré mais pas sorti
+        elif presence and presence.heure_entree and not presence.heure_sortie:
+            etat = "(Entré)"
+        # Si l'employé est sorti mais pas entré
+        elif presence and presence.heure_sortie and not presence.heure_entree:
+            etat = "(Sorti)"
+        # Si l'employé n'a pas de présence aujourd'hui
         else:
-            etat = "Absent"
+            etat = "(Absent)"
         employe_data.append({
             "employe": employe,
             "presence": presence,
@@ -133,3 +140,61 @@ def imprimer_bulletins_temporaire(request):
         'bulletins': bulletins,
         'today': today,
     })
+
+def analyse_presence_globale(request):
+    import datetime
+    from django.db.models import Count, Q
+    from django.utils import timezone
+    
+    # Statistiques globales
+    total_employes = Employee.objects.filter(actif=True).count()
+    total_temporaires = Employee.objects.filter(actif=True, type='temporaire').count()
+    total_permanents = Employee.objects.filter(actif=True, type='permanent').count()
+    
+    # Présences aujourd'hui
+    aujourd_hui = timezone.now().date()
+    presences_aujourd_hui = Presence.objects.filter(date=aujourd_hui)
+    presents_aujourd_hui = presences_aujourd_hui.filter(heure_entree__isnull=False).count()
+    absents_aujourd_hui = total_employes - presents_aujourd_hui
+    
+    # Statistiques par type
+    temporaires_presents = presences_aujourd_hui.filter(
+        employee__type='temporaire', 
+        heure_entree__isnull=False
+    ).count()
+    permanents_presents = presences_aujourd_hui.filter(
+        employee__type='permanent', 
+        heure_entree__isnull=False
+    ).count()
+    
+    # Top des employés les plus présents ce mois
+    debut_mois = aujourd_hui.replace(day=1)
+    presences_mois = Presence.objects.filter(
+        date__gte=debut_mois,
+        heure_entree__isnull=False
+    ).values('employee__nom', 'employee__prenom').annotate(
+        nb_presences=Count('id')
+    ).order_by('-nb_presences')[:10]
+    
+    # Statistiques par service
+    stats_service = presences_aujourd_hui.filter(
+        heure_entree__isnull=False
+    ).values('employee__service').annotate(
+        nb_presents=Count('id')
+    ).order_by('-nb_presents')
+    
+    context = {
+        'total_employes': total_employes,
+        'total_temporaires': total_temporaires,
+        'total_permanents': total_permanents,
+        'presents_aujourd_hui': presents_aujourd_hui,
+        'absents_aujourd_hui': absents_aujourd_hui,
+        'temporaires_presents': temporaires_presents,
+        'permanents_presents': permanents_presents,
+        'presences_mois': presences_mois,
+        'stats_service': stats_service,
+        'aujourd_hui': aujourd_hui,
+        'debut_mois': debut_mois,
+    }
+    
+    return render(request, 'analyse_presence_globale.html', context)

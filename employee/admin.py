@@ -92,13 +92,14 @@ class EmployeeAdmin(admin.ModelAdmin):
         return render(request, "admin/employee_excel_form.html", context)
     
     
+    
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         if obj and obj.type == 'temporaire':
-            form.base_fields['salaire_journalier'].widget = admin.widgets.AdminRadioSelect(choices=[(4500, '4500 FCFA'), (5000, '5000 FCFA')])
-        else:
             form.base_fields['salaire_journalier'].widget = admin.widgets.AdminTextInputWidget()
+        
+            
         return form
 
     def salaire_mensuel_display(self, obj):
@@ -109,3 +110,25 @@ class EmployeeAdmin(admin.ModelAdmin):
 
     class Media:
         js = ('employee/admin_employee.js',)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('import-employes/', self.import_employees),
+            path('fiche-presence-globale/', 
+                 self.admin_site.admin_view(lambda request: redirect('/presence/fiche-presence-globale/')),
+                 name='fiche_presence_globale'),
+            path('liste-presence-tous/', 
+                 self.admin_site.admin_view(lambda request: redirect('/presence/fiche-presence-globale/')),
+                 name='liste_presence_tous'),
+            path('liste-presence-temporaires/', 
+                 self.admin_site.admin_view(lambda request: redirect('/presence/fiche-presence-globale/?type=temporaire')),
+                 name='liste_presence_temporaires'),
+            path('liste-presence-permanents/', 
+                 self.admin_site.admin_view(lambda request: redirect('/presence/fiche-presence-globale/?type=permanent')),
+                 name='liste_presence_permanents'),
+            path('analyse-presence-globale/', 
+                 self.admin_site.admin_view(lambda request: redirect('/presence/analyse-presence-globale/')),
+                 name='analyse_presence_globale'),
+        ]
+        return custom_urls + urls
