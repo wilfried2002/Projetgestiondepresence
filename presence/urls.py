@@ -1,6 +1,6 @@
 from django.urls import path
 
-from presence.views import tableau_presence, marquer_entree, marquer_sortie, fiche_presence_globale, bulletin_paie_temporaire, imprimer_bulletins_temporaire, analyse_presence_globale
+from presence.views import tableau_presence, marquer_entree, marquer_sortie, fiche_presence_globale, bulletin_paie_temporaire, imprimer_bulletins_temporaire, analyse_presence_globale, analyse_financiere
 
 
 urlpatterns = [
@@ -11,4 +11,5 @@ urlpatterns = [
     path('bulletin-paie-temporaire/<int:employee_id>/', bulletin_paie_temporaire, name='bulletin_paie_temporaire'),
     path('bulletins-paie-temporaire/', imprimer_bulletins_temporaire, name='imprimer_bulletins_temporaire'),
     path('analyse-presence-globale/', analyse_presence_globale, name='analyse_presence_globale'),
+    path('analyse-financiere/', analyse_financiere, name='analyse_financiere'),
 ]

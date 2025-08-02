@@ -130,5 +130,8 @@ class EmployeeAdmin(admin.ModelAdmin):
             path('analyse-presence-globale/', 
                  self.admin_site.admin_view(lambda request: redirect('/presence/analyse-presence-globale/')),
                  name='analyse_presence_globale'),
+            path('analyse-financiere/', 
+                 self.admin_site.admin_view(lambda request: redirect('/presence/analyse-financiere/')),
+                 name='analyse_financiere'),
         ]
         return custom_urls + urls

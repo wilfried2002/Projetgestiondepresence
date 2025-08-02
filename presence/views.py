@@ -198,3 +198,139 @@ def analyse_presence_globale(request):
     }
     
     return render(request, 'analyse_presence_globale.html', context)
+
+def analyse_financiere(request):
+    import datetime
+    from django.db.models import Sum, Count, Q
+    from django.utils import timezone
+    from calendar import monthrange
+    
+    # Paramètres de filtrage
+    mois = request.GET.get('mois', timezone.now().month)
+    annee = request.GET.get('annee', timezone.now().year)
+    
+    # Date de début et fin du mois
+    debut_mois = datetime.date(int(annee), int(mois), 1)
+    fin_mois = datetime.date(int(annee), int(mois), monthrange(int(annee), int(mois))[1])
+    
+    # Statistiques temporaires
+    temporaires = Employee.objects.filter(actif=True, type='temporaire')
+    presences_temporaires = Presence.objects.filter(
+        employee__type='temporaire',
+        employee__actif=True,
+        date__gte=debut_mois,
+        date__lte=fin_mois,
+        heure_entree__isnull=False,
+        heure_sortie__isnull=False
+    )
+    
+    # Calculs temporaires
+    total_temporaires = temporaires.count()
+    total_jours_temporaires = presences_temporaires.count()
+    cout_temporaires = 0
+    
+    for temp in temporaires:
+        presences_emp = presences_temporaires.filter(employee=temp)
+        jours_emp = presences_emp.count()
+        if temp.salaire_journalier:
+            cout_temporaires += jours_emp * temp.salaire_journalier
+    
+    # Statistiques permanents
+    permanents = Employee.objects.filter(actif=True, type='permanent')
+    presences_permanents = Presence.objects.filter(
+        employee__type='permanent',
+        employee__actif=True,
+        date__gte=debut_mois,
+        date__lte=fin_mois,
+        heure_entree__isnull=False
+    )
+    
+    # Calculs permanents (salaire fixe mensuel)
+    total_permanents = permanents.count()
+    total_jours_permanents = presences_permanents.count()
+    
+    # Salaire moyen des permanents (à adapter selon ton modèle)
+    salaire_moyen_permanent = 150000  # FCFA par mois (à ajuster)
+    cout_permanents = total_permanents * salaire_moyen_permanent
+    
+    # Totaux
+    cout_total = cout_temporaires + cout_permanents
+    
+    # Détail par employé temporaire
+    detail_temporaires = []
+    for temp in temporaires:
+        presences_emp = presences_temporaires.filter(employee=temp)
+        jours_emp = presences_emp.count()
+        salaire_emp = jours_emp * (temp.salaire_journalier or 0)
+        detail_temporaires.append({
+            'employee': temp,
+            'jours': jours_emp,
+            'salaire_journalier': temp.salaire_journalier or 0,
+            'salaire_total': salaire_emp
+        })
+    
+    # Détail par employé permanent
+    detail_permanents = []
+    for perm in permanents:
+        presences_emp = presences_permanents.filter(employee=perm)
+        jours_emp = presences_emp.count()
+        detail_permanents.append({
+            'employee': perm,
+            'jours': jours_emp,
+            'salaire_mensuel': salaire_moyen_permanent,
+            'salaire_total': salaire_moyen_permanent
+        })
+    
+    # Prévisions pour les mois suivants
+    mois_suivants = []
+    for i in range(1, 4):  # 3 mois suivants
+        mois_futur = (int(mois) + i) % 12
+        if mois_futur == 0:
+            mois_futur = 12
+        annee_futur = int(annee) + ((int(mois) + i - 1) // 12)
+        
+        # Estimation basée sur les données actuelles
+        estimation_temporaires = cout_temporaires * 1.05  # +5% par mois
+        estimation_permanents = cout_permanents
+        estimation_totale = estimation_temporaires + estimation_permanents
+        
+        mois_suivants.append({
+            'mois': mois_futur,
+            'annee': annee_futur,
+            'nom_mois': datetime.date(annee_futur, mois_futur, 1).strftime('%B %Y'),
+            'estimation_temporaires': estimation_temporaires,
+            'estimation_permanents': estimation_permanents,
+            'estimation_totale': estimation_totale
+        })
+    
+    context = {
+        'mois': int(mois),
+        'annee': int(annee),
+        'nom_mois': debut_mois.strftime('%B %Y'),
+        'debut_mois': debut_mois,
+        'fin_mois': fin_mois,
+        
+        # Statistiques temporaires
+        'total_temporaires': total_temporaires,
+        'total_jours_temporaires': total_jours_temporaires,
+        'cout_temporaires': cout_temporaires,
+        'detail_temporaires': detail_temporaires,
+        
+        # Statistiques permanents
+        'total_permanents': total_permanents,
+        'total_jours_permanents': total_jours_permanents,
+        'cout_permanents': cout_permanents,
+        'detail_permanents': detail_permanents,
+        
+        # Totaux
+        'cout_total': cout_total,
+        
+        # Prévisions
+        'mois_suivants': mois_suivants,
+        
+        # Options de filtrage
+        'mois_options': [(i, datetime.date(2000, i, 1).strftime('%B')) for i in range(1, 13)],
+        'annee_options': range(2024, 2027),
+    }
+    
+    return render(request, 'analyse_financiere.html', context)
