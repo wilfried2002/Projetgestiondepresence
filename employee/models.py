@@ -16,7 +16,7 @@ class Employee(models.Model):
     poste = models.CharField(max_length=100)
     service = models.CharField(max_length=100)
     type = models.CharField(max_length=10, choices=EMPLOYEE_TYPE_CHOICES)
-    salaire_journalier = models.CharField(null=True, blank=True)
+    salaire_journalier = models.CharField(max_length=10, null=True, blank=True)
     
     date_embauche = models.DateField(null=True, blank=True)
 

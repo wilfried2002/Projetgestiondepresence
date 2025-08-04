@@ -1,9 +1,15 @@
 from django.urls import path
 
-from presence.views import tableau_presence, marquer_entree, marquer_sortie, fiche_presence_globale, bulletin_paie_temporaire, imprimer_bulletins_temporaire, analyse_presence_globale, analyse_financiere
+from presence.views import tableau_presence, marquer_entree, marquer_sortie, fiche_presence_globale, bulletin_paie_temporaire, imprimer_bulletins_temporaire, analyse_presence_globale, analyse_financiere, login_agent, logout_agent, error_unauthorized
 
 
 urlpatterns = [
+    # URLs d'authentification
+    path('accounts/login/', login_agent, name='login_agent'),
+    path('logout/', logout_agent, name='logout_agent'),
+    path('error/unauthorized/', error_unauthorized, name='error_unauthorized'),
+    
+    # URLs protégées par authentification
     path('tableau/', tableau_presence, name='tableau_presence'),
     path('entree/<int:employe_id>/', marquer_entree, name='marquer_entree'),
     path('sortie/<int:employe_id>/', marquer_sortie, name='marquer_sortie'),

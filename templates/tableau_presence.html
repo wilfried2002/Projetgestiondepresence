@@ -17,7 +17,20 @@
     </div>
   {% endfor %}
 {% endif %}
-<h2 class="mb-4 text-center">Tableau de pointage des employés</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="mb-0">Tableau de pointage des employés</h2>
+  <div class="d-flex align-items-center">
+    {% if user.is_authenticated %}
+      <span class="me-3 text-muted">
+        <i class="fas fa-user me-1"></i>
+        Connecté en tant que : {{ user.agent_pointage.nom_complet|default:user.username }}
+      </span>
+      <a href="{% url 'logout_agent' %}" class="btn btn-outline-danger btn-sm">
+        <i class="fas fa-sign-out-alt me-1"></i>Déconnexion
+      </a>
+    {% endif %}
+  </div>
+</div>
 
 <!-- Barre de recherche -->
 <div class="input-group mb-4">

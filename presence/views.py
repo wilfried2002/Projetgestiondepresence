@@ -1,5 +1,10 @@
 from django.utils import timezone
 from django.shortcuts import redirect, render
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from django.http import HttpResponseForbidden
+from .models import AgentPointage
 
 # Create your views here.
 # views.py dans l'application presence
@@ -12,7 +17,46 @@ from .models import Presence
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 
+def is_agent_pointage(user):
+    """Vérifie si l'utilisateur est un agent de pointage actif"""
+    try:
+        return user.is_authenticated and user.agent_pointage.actif
+    except:
+        return False
 
+def login_agent(request):
+    """Vue de connexion pour les agents de pointage"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None and is_agent_pointage(user):
+            login(request, user)
+            # Mettre à jour la dernière connexion
+            agent = user.agent_pointage
+            agent.derniere_connexion = timezone.now()
+            agent.save()
+            
+            messages.success(request, f"Bienvenue {agent.nom_complet} !")
+            return redirect('tableau_presence')
+        else:
+            messages.error(request, "Nom d'utilisateur ou mot de passe incorrect, ou compte non autorisé.")
+    
+    return render(request, 'auth/login_agent.html')
+
+def logout_agent(request):
+    """Vue de déconnexion pour les agents de pointage"""
+    logout(request)
+    messages.info(request, "Vous avez été déconnecté avec succès.")
+    return redirect('login_agent')
+
+def error_unauthorized(request):
+    """Page d'erreur pour les utilisateurs non autorisés"""
+    return render(request, 'auth/error_unauthorized.html', status=403)
+
+@login_required
+@user_passes_test(is_agent_pointage, login_url='login_agent')
 def tableau_presence(request):
     employee = Employee.objects.filter(actif=True)
     presences = Presence.objects.filter(date=now().date())
@@ -44,6 +88,8 @@ def tableau_presence(request):
     })
 
 
+@login_required
+@user_passes_test(is_agent_pointage, login_url='login_agent')
 @csrf_exempt
 def marquer_entree(request, employe_id):
     employee = get_object_or_404(Employee, id=employe_id)
@@ -57,6 +103,8 @@ def marquer_entree(request, employe_id):
     return redirect('tableau_presence')
 
 
+@login_required
+@user_passes_test(is_agent_pointage, login_url='login_agent')
 @csrf_exempt
 def marquer_sortie(request, employe_id):
     employee = get_object_or_404(Employee, id=employe_id)
